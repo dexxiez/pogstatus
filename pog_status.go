@@ -16,7 +16,6 @@ import (
 
 func main() {
 	wifiSignalChan := make(chan int)
-
 	X, err := xgb.NewConn()
 	if err != nil {
 		log.Fatal(err)
@@ -29,14 +28,18 @@ func main() {
 
 	for {
 		select {
-		case newSignal := <-wifiSignalChan:
-			wifiSignal = newSignal
+		case wifiSignal = <-wifiSignalChan:
 		default:
 		}
 
-		status := fmt.Sprintf("CPU: %d%% | Mem: %d%% | Wifi: %d%% | %s", getCPUUsage(), getMemUsage(), wifiSignal, time.Now().Format("03:04:05 PM"))
+		status := fmt.Sprintf(" CPU: %s%% | Mem: %s%% | Wifi: %s | %s ",
+			padLengthSpaces(getCPUUsage(), 2),
+			padLengthSpaces(getMemUsage(), 2),
+			getWifiSignalIcon(wifiSignal),
+			getDateTime(),
+		)
 		setRootName(X, status)
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -65,6 +68,10 @@ func getMemUsage() int {
 	return int(v.UsedPercent)
 }
 
+func getDateTime() string {
+	return time.Now().Format("02/01/2006 03:04:05 PM")
+}
+
 func updateWifiSignal(signalChan chan<- int) {
 	for {
 		cmd := exec.Command("sh", "-c", "nmcli -t -f IN-USE,SIGNAL dev wifi | grep '*' | awk -F: '{print $2}'")
@@ -80,8 +87,32 @@ func updateWifiSignal(signalChan chan<- int) {
 			log.Printf("Error converting signal strength to int: %v", err)
 			continue
 		}
-
 		signalChan <- signal
 		time.Sleep(10 * time.Second)
+	}
+}
+
+func padLengthSpaces(n int, length int) string {
+	s := strconv.Itoa(n)
+	spaces := length - len(s)
+	if spaces > 0 {
+		return strings.Repeat(" ", spaces) + s
+	}
+	return s
+}
+
+func getWifiSignalIcon(signal int) string {
+	if signal < 0 {
+		return " "
+	} else if signal < 20 {
+		return " "
+	} else if signal < 40 {
+		return " "
+	} else if signal < 60 {
+		return " "
+	} else if signal < 80 {
+		return " "
+	} else {
+		return " "
 	}
 }
